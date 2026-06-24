@@ -12,4 +12,13 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Allowlisted development hosts (e.g. ngrok forwarding domains) so Vite will accept
+  // requests coming from those external URLs during dev. Add additional hosts here
+  // if you run other tunnels.
+  vite: {
+    server: {
+      // Example: ['my-tunnel.ngrok-free.dev']
+      allowedHosts: ["absently-unearth-joylessly.ngrok-free.dev"],
+    },
+  },
 });

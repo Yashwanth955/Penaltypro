@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+import { isAuthed, getUser } from "@/lib/auth";
+import Logo from "@/components/logo";
+import { useState, useEffect, type ReactNode } from "react";
 import { Menu, Mail, Phone, Building2, FileText } from "lucide-react";
 
 export const Route = createFileRoute("/contact")({
@@ -49,16 +51,7 @@ const Text = ({
   return <C className={className}>{children}</C>;
 };
 
-function Logo() {
-  return (
-    <Row className="items-center gap-2">
-      <div className="grid h-7 w-7 place-items-center rounded-md bg-primary/15 text-primary font-bold">
-        P
-      </div>
-      <Text className="font-semibold tracking-tight">PenaltyPro</Text>
-    </Row>
-  );
-}
+
 
 const NAV: { label: string; to: string }[] = [
   { label: "Home", to: "/" },
@@ -69,6 +62,12 @@ const NAV: { label: string; to: string }[] = [
 
 function NavBar({ active }: { active: string }) {
   const [open, setOpen] = useState(false);
+  const [authed, setAuthed] = useState(false);
+  const [username, setUsername] = useState<string | null>(null);
+  useEffect(() => {
+    setAuthed(isAuthed());
+    setUsername(getUser());
+  }, []);
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur">
       <View className="mx-auto w-full max-w-7xl">
@@ -92,12 +91,24 @@ function NavBar({ active }: { active: string }) {
             ))}
           </nav>
           <Row className="items-center gap-3">
-            <a
-              href="#"
-              className="hidden md:inline-flex items-center rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
-            >
-              Login / Sign In
-            </a>
+            {authed ? (
+              <Link
+                to="/profile"
+                className="hidden md:inline-flex items-center rounded-md border border-primary px-3 py-1 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+              >
+                <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-primary text-primary-foreground font-semibold mr-2">
+                  {username ? username.split("@")[0].slice(0, 2).toUpperCase() : "U"}
+                </span>
+                <span className="hidden lg:inline-block">{username ?? "Profile"}</span>
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                className="hidden md:inline-flex items-center rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+              >
+                Login / Sign In
+              </Link>
+            )}
             <button
               aria-label="Open menu"
               onClick={() => setOpen((s) => !s)}
@@ -114,6 +125,18 @@ function NavBar({ active }: { active: string }) {
                 {l.label}
               </Link>
             ))}
+            {authed ? (
+              <Link to="/profile" className="mt-2 inline-flex w-fit items-center rounded-md border border-primary px-4 py-2 text-sm text-primary">
+                <span className="inline-flex items-center justify-center h-7 w-7 rounded-full bg-primary text-primary-foreground font-semibold mr-2">
+                  {username ? username.split("@")[0].slice(0, 2).toUpperCase() : "U"}
+                </span>
+                <span>{username ?? "Profile"}</span>
+              </Link>
+            ) : (
+              <Link to="/login" className="mt-2 inline-flex w-fit rounded-md border border-primary px-4 py-2 text-sm text-primary">
+                Login / Sign In
+              </Link>
+            )}
           </View>
         )}
       </View>

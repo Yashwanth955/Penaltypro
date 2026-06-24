@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { isAuthed, getUser } from "@/lib/auth";
+import Logo from "@/components/logo";
 import {
   Mic,
   PencilLine,
@@ -7,18 +9,18 @@ import {
   Check,
   Menu,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "PenaltyPro — Real-Time Football Officiating" },
+      { title: "PenaltyPro — Near Real Time Officiating" },
       {
         name: "description",
         content:
-          "PenaltyPro Pen: handheld device for football officials. Capture voice notes and penalty metadata in real time — AI-powered foul reports.",
+          "PenaltyPro Pen: handheld device for sports officials. Capture voice notes and penalty metadata in real time — AI-powered foul reports.",
       },
-      { property: "og:title", content: "PenaltyPro — Real-Time Football Officiating" },
+      { property: "og:title", content: "PenaltyPro — Near Real Time Officiating" },
       {
         property: "og:description",
         content: "Capture fouls accurately. Every play. Every game.",
@@ -54,19 +56,16 @@ const Text = ({
   return <Component className={className}>{children}</Component>;
 };
 
-function Logo() {
-  return (
-    <Row className="items-center gap-2">
-      <div className="grid h-7 w-7 place-items-center rounded-md bg-primary/15 text-primary font-bold">
-        P
-      </div>
-      <Text className="font-semibold tracking-tight">PenaltyPro</Text>
-    </Row>
-  );
-}
+
 
 function NavBar() {
   const [open, setOpen] = useState(false);
+  const [authed, setAuthed] = useState(false);
+  const [username, setUsername] = useState<string | null>(null);
+  useEffect(() => {
+    setAuthed(isAuthed());
+    setUsername(getUser());
+  }, []);
   const links: { label: string; to: string }[] = [
     { label: "Home", to: "/" },
     { label: "About Us", to: "/about" },
@@ -94,12 +93,26 @@ function NavBar() {
             ))}
           </nav>
           <Row className="items-center gap-3">
-            <a
-              href="#"
-              className="hidden md:inline-flex items-center rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
-            >
-              Login / Sign In
-            </a>
+            {authed ? (
+              <Link
+                to="/profile"
+                className="hidden md:inline-flex items-center rounded-md border border-primary px-3 py-1 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+              >
+                <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-primary text-primary-foreground font-semibold mr-2">
+                  {username
+                    ? username.split("@")[0].slice(0, 2).toUpperCase()
+                    : "U"}
+                </span>
+                <span className="hidden lg:inline-block">{username ?? "Profile"}</span>
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                className="hidden md:inline-flex items-center rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+              >
+                Login / Sign In
+              </Link>
+            )}
             <button
               aria-label="Open menu"
               onClick={() => setOpen((s) => !s)}
@@ -116,12 +129,21 @@ function NavBar() {
                 {l.label}
               </Link>
             ))}
-            <a
-              href="#"
-              className="mt-2 inline-flex w-fit rounded-md border border-primary px-4 py-2 text-sm text-primary"
-            >
-              Login / Sign In
-            </a>
+            {authed ? (
+              <Link to="/profile" className="mt-2 inline-flex w-fit items-center rounded-md border border-primary px-4 py-2 text-sm text-primary">
+                <span className="inline-flex items-center justify-center h-7 w-7 rounded-full bg-primary text-primary-foreground font-semibold mr-2">
+                  {username ? username.split("@")[0].slice(0, 2).toUpperCase() : "U"}
+                </span>
+                <span>{username ?? "Profile"}</span>
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                className="mt-2 inline-flex w-fit rounded-md border border-primary px-4 py-2 text-sm text-primary"
+              >
+                Login / Sign In
+              </Link>
+            )}
           </View>
         )}
       </View>
@@ -135,7 +157,7 @@ function Hero() {
       <View className="mx-auto w-full max-w-7xl gap-12 lg:flex-row lg:items-center lg:gap-16">
         <View className="flex-1 gap-6">
           <Text className="text-primary text-xs sm:text-sm font-semibold tracking-[0.18em]">
-            REAL-TIME FOOTBALL OFFICIATING
+            NEAR REAL TIME OFFICIATING
           </Text>
           <Text
             as="h1"
@@ -146,18 +168,17 @@ function Hero() {
             Every Play. Every Game.
           </Text>
           <Text className="text-muted-foreground text-base sm:text-lg max-w-xl">
-            The PenaltyPro Pen is a handheld device built for football officials. Capture voice
-            notes and penalty metadata in real time — then let AI turn them into structured,
-            export-ready foul reports.
+            The PenaltyPro Pen is a handheld device built for sports officials to capture penalty
+            information in real time. Record voice notes, timestamps, game details, and penalty
+            metadata during the action, then let AI convert it into structured, export-ready reports.
           </Text>
           <Row className="flex-wrap gap-3 pt-2">
-            <Link
-              to="/order"
-              search={{ product: "hardware" }}
+            <a
+              href="#pricing"
               className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-transform hover:-translate-y-0.5"
             >
               Shop Now
-            </Link>
+            </a>
             <a
               href="#device"
               className="inline-flex items-center justify-center rounded-md border border-primary px-6 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
@@ -216,22 +237,22 @@ const features = [
   {
     icon: Mic,
     t: "Voice Capture",
-    d: "High-quality built-in mic records live play-by-play voice notes with clarity during game conditions.",
+    d: "AI-powered audio transcription converts raw voice notes captured on the PenaltyPro Pen into clean, readable text after the game, with a target Word Error Rate under 10%.",
   },
   {
     icon: PencilLine,
     t: "Auto Metadata",
-    d: "Automatically logs play sequence, down, distance, and field position alongside each recording.",
+    d: "PenaltyPro uses natural language processing to pull key foul details from transcribed notes, including the foul, player, down, distance, and field position, then organizes them into structured report fields.",
   },
   {
     icon: Cloud,
     t: "Cloud AI Engine",
-    d: "AI transcribes and extracts structured foul fields with over 90% accuracy post-game in the cloud.",
+    d: "PenaltyPro creates export-ready foul reports that can be downloaded in multiple formats, including CSV files for conference submissions. API support also allows integration with other foul reporting platforms and reporting workflow.",
   },
   {
     icon: BarChart3,
     t: "Analytics Dashboard",
-    d: "Track performance trends, foul types, and accuracy over time through the companion app.",
+    d: "Officials can track personal performance over time using captured foul report data, including trends, accuracy, play types, foul categories, and conference-level reporting where enabled.",
   },
 ];
 
@@ -245,10 +266,9 @@ function Device() {
             About the PenaltyPro Pen
           </Text>
           <Text className="text-muted-foreground leading-relaxed">
-            A handheld, pen-sized device engineered for football officiating. Records voice notes
-            and game metadata during live play. Syncs with the PenaltyPro cloud after the game —
-            where AI transcribes recordings and extracts structured penalty data. Officials review,
-            correct, and export reports through a companion app.
+            The PenaltyPro Pen is a handheld device built for sports officials to capture penalty
+            information in real time. Record voice notes, timestamps, game details, and penalty
+            metadata during the action, then let AI convert it into structured, export-ready reports.
           </Text>
           <View className="gap-3 pt-2">
             {[
@@ -360,6 +380,11 @@ const plans: Plan[] = [
 ];
 
 function Pricing() {
+  const navigate = useNavigate();
+  const goBuy = (productId: string) => {
+    if (isAuthed()) navigate({ to: "/order", search: { product: productId } });
+    else navigate({ to: "/login", search: { redirect: `/order?product=${productId}` } });
+  };
   return (
     <section id="pricing" className="px-5 sm:px-8 py-20 sm:py-28">
       <View className="mx-auto w-full max-w-7xl">
@@ -417,13 +442,13 @@ function Pricing() {
                     </Row>
                   ))}
                 </View>
-                <Link
-                  to="/order"
-                  search={{ product: p.productId }}
+                <button
+                  type="button"
+                  onClick={() => goBuy(p.productId)}
                   className="mt-auto inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90 transition"
                 >
                   Purchase
-                </Link>
+                </button>
               </View>
             </View>
           ))}
@@ -488,7 +513,7 @@ function Footer() {
         <View className="gap-4 max-w-sm">
           <Logo />
           <Text className="text-muted-foreground text-sm leading-relaxed">
-            Real-time football foul reporting — hardware, AI, and cloud working together for every
+            Real-time foul reporting — hardware, AI, and cloud working together for every
             official.
           </Text>
         </View>

@@ -1,6 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState, useEffect, type ReactNode } from "react";
 import { Menu } from "lucide-react";
+import { isAuthed, getUser } from "@/lib/auth";
+import Logo from "@/components/logo";
 
 export const Route = createFileRoute("/registration")({
   head: () => ({
@@ -49,16 +51,7 @@ const Text = ({
   return <C className={className}>{children}</C>;
 };
 
-function Logo() {
-  return (
-    <Row className="items-center gap-2">
-      <div className="grid h-7 w-7 place-items-center rounded-md bg-primary/15 text-primary font-bold">
-        P
-      </div>
-      <Text className="font-semibold tracking-tight">PenaltyPro</Text>
-    </Row>
-  );
-}
+
 
 const NAV: { label: string; to: string }[] = [
   { label: "Home", to: "/" },
@@ -69,6 +62,12 @@ const NAV: { label: string; to: string }[] = [
 
 function NavBar({ active }: { active: string }) {
   const [open, setOpen] = useState(false);
+  const [authed, setAuthed] = useState(false);
+  const [username, setUsername] = useState<string | null>(null);
+  useEffect(() => {
+    setAuthed(isAuthed());
+    setUsername(getUser());
+  }, []);
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur">
       <View className="mx-auto w-full max-w-7xl">
@@ -92,12 +91,24 @@ function NavBar({ active }: { active: string }) {
             ))}
           </nav>
           <Row className="items-center gap-3">
-            <a
-              href="#"
-              className="hidden md:inline-flex items-center rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
-            >
-              Login / Sign In
-            </a>
+            {authed ? (
+              <Link
+                to="/profile"
+                className="hidden md:inline-flex items-center rounded-md border border-primary px-3 py-1 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+              >
+                <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-primary text-primary-foreground font-semibold mr-2">
+                  {username ? username.split("@")[0].slice(0, 2).toUpperCase() : "U"}
+                </span>
+                <span className="hidden lg:inline-block">{username ?? "Profile"}</span>
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                className="hidden md:inline-flex items-center rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+              >
+                Login / Sign In
+              </Link>
+            )}
             <button
               aria-label="Open menu"
               onClick={() => setOpen((s) => !s)}
@@ -114,6 +125,18 @@ function NavBar({ active }: { active: string }) {
                 {l.label}
               </Link>
             ))}
+            {authed ? (
+              <Link to="/profile" className="mt-2 inline-flex w-fit items-center rounded-md border border-primary px-4 py-2 text-sm text-primary">
+                <span className="inline-flex items-center justify-center h-7 w-7 rounded-full bg-primary text-primary-foreground font-semibold mr-2">
+                  {username ? username.split("@")[0].slice(0, 2).toUpperCase() : "U"}
+                </span>
+                <span>{username ?? "Profile"}</span>
+              </Link>
+            ) : (
+              <Link to="/login" className="mt-2 inline-flex w-fit rounded-md border border-primary px-4 py-2 text-sm text-primary">
+                Login / Sign In
+              </Link>
+            )}
           </View>
         )}
       </View>
@@ -180,10 +203,15 @@ const inputCls =
 
 function HardwareForm() {
   const [submitted, setSubmitted] = useState(false);
+  const navigate = useNavigate();
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
+        if (!isAuthed()) {
+          navigate({ to: "/login", search: { redirect: "/registration" } });
+          return;
+        }
         setSubmitted(true);
       }}
       className="flex flex-col gap-5 rounded-xl border border-border bg-card p-7"
@@ -237,10 +265,15 @@ function HardwareForm() {
 function SoftwareForm() {
   const [submitted, setSubmitted] = useState(false);
   const [plan, setPlan] = useState<"software" | "bundle">("software");
+  const navigate = useNavigate();
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
+        if (!isAuthed()) {
+          navigate({ to: "/login", search: { redirect: "/registration" } });
+          return;
+        }
         setSubmitted(true);
       }}
       className="flex flex-col gap-5 rounded-xl border border-border bg-card p-7"
@@ -302,7 +335,127 @@ function SoftwareForm() {
   );
 }
 
+function RegistrationForm() {
+  const [type, setType] = useState<"hardware" | "software" | "both">("hardware");
+  const [submitted, setSubmitted] = useState(false);
+  const [plan, setPlan] = useState<"software" | "bundle">("software");
+  const navigate = useNavigate();
+
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [serial, setSerial] = useState("");
+  const [purchaseDate, setPurchaseDate] = useState("");
+  const [purchasedFrom, setPurchasedFrom] = useState("");
+  const [org, setOrg] = useState("");
+  const [subscriptionKey, setSubscriptionKey] = useState("");
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isAuthed()) {
+      navigate({ to: "/login", search: { redirect: "/registration" } });
+      return;
+    }
+    setSubmitted(true);
+  };
+
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col gap-5 rounded-xl border border-border bg-card p-7">
+      <View className="gap-2">
+        <Text as="h2" className="text-2xl font-semibold tracking-tight">Register PenaltyPro Pen / Activate Subscription</Text>
+        <Text className="text-muted-foreground text-sm leading-relaxed">Choose an option and complete the fields below.</Text>
+      </View>
+
+      <View className="gap-2">
+        <Row className="gap-3">
+          {(["hardware", "software", "both"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setType(t)}
+              className={`rounded-md border px-4 py-2 text-sm ${type === t ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}
+            >
+              {t === "hardware" ? "Register Pen" : t === "software" ? "Activate Subscription" : "Both"}
+            </button>
+          ))}
+        </Row>
+      </View>
+
+      <Field label="Full Name">
+        <input className={inputCls} placeholder="John Smith" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+      </Field>
+      <Field label="Email Address">
+        <input type="email" className={inputCls} placeholder="john@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+      </Field>
+      <Field label="Phone Number (optional)">
+        <input type="tel" className={inputCls} placeholder="(555) 000-0000" value={phone} onChange={(e) => setPhone(e.target.value)} />
+      </Field>
+
+      {(type === "hardware" || type === "both") && (
+        <>
+          <Field label="Device Serial Number" hint="Found on the underside of your pen device">
+            <input className={inputCls} placeholder="PP-XXXX-XXXX" value={serial} onChange={(e) => setSerial(e.target.value)} required={type === "hardware"} />
+          </Field>
+          <Row className="gap-4">
+            <Field label="Purchase Date">
+              <input type="date" className={inputCls} value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} />
+            </Field>
+            <Field label="Purchased From">
+              <input className={inputCls} placeholder="Retailer or website" value={purchasedFrom} onChange={(e) => setPurchasedFrom(e.target.value)} />
+            </Field>
+          </Row>
+        </>
+      )}
+
+      {(type === "software" || type === "both") && (
+        <>
+          <Field label="Subscription / Licence Key">
+            <input className={inputCls} placeholder="PPRO-XXXX-XXXX-XXXX" value={subscriptionKey} onChange={(e) => setSubscriptionKey(e.target.value)} required={type === "software"} />
+          </Field>
+          <Field label="Conference / Organisation Name (optional)">
+            <input className={inputCls} placeholder="e.g. State Football Officials Assoc." value={org} onChange={(e) => setOrg(e.target.value)} />
+          </Field>
+          <View className="gap-2">
+            <Text className="text-sm text-foreground/90">Select Plan</Text>
+            <Row className="gap-3">
+              {(["software", "bundle"] as const).map((p) => (
+                <button
+                  type="button"
+                  key={p}
+                  onClick={() => setPlan(p)}
+                  className={`flex-1 rounded-md border px-4 py-2.5 text-sm font-medium transition ${plan === p ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
+                >
+                  {p === "software" ? "Software Only" : "Bundle"}
+                </button>
+              ))}
+            </Row>
+          </View>
+        </>
+      )}
+
+      <button type="submit" className="mt-2 inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90">
+        {submitted ? "Submitted" : "Submit Registration"}
+      </button>
+      {submitted && (
+        <Text className="text-sm text-[color:var(--success)]">
+          Thanks — we received your request.
+        </Text>
+      )}
+    </form>
+  );
+}
+
 function RegistrationPage() {
+  const navigate = useNavigate();
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    if (!isAuthed()) {
+      navigate({ to: "/login", search: { redirect: "/registration" } });
+    } else {
+      setReady(true);
+    }
+  }, [navigate]);
+  if (!ready) return null;
   return (
     <View className="min-h-screen bg-background text-foreground">
       <NavBar active="Registration" />
@@ -321,9 +474,8 @@ function RegistrationPage() {
           </View>
         </section>
         <section className="px-5 sm:px-8 pb-20">
-          <div className="mx-auto w-full max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <HardwareForm />
-            <SoftwareForm />
+          <div className="mx-auto w-full max-w-7xl">
+            <RegistrationForm />
           </div>
           <View className="mx-auto w-full max-w-7xl pt-10">
             <Text className="text-sm text-muted-foreground text-center">
